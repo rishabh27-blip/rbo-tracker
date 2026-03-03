@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🫙 Rice Bran Oil Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #0a0a0f; color: #e2e8f0; font-family: Georgia, serif; min-height: 100vh; }
+    .header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); border-bottom: 2px solid #f59e0b; padding: 20px 24px; }
+    .header-inner { max-width: 800px; margin: 0 auto; }
+    .header-label { font-size: 11px; letter-spacing: 4px; color: #f59e0b; text-transform: uppercase; margin-bottom: 4px; }
+    .header h1 { font-size: 24px; font-weight: bold; color: #fef3c7; }
+    .header p { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .container { max-width: 800px; margin: 0 auto; padding: 24px 16px; }
+    .signal-box { border-radius: 10px; padding: 14px 18px; margin-bottom: 20px; display: none; }
+    .signal-title { font-weight: bold; font-size: 16px; }
+    .signal-sub { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+    .metric-card { background: #1e293b; border-radius: 8px; padding: 12px 14px; }
+    .metric-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
+    .metric-value { font-size: 22px; font-weight: bold; margin: 2px 0; }
+    .metric-sub { font-size: 11px; color: #475569; }
+    .card { background: #111827; border-radius: 12px; border: 1px solid #1e293b; overflow: hidden; margin-bottom: 24px; }
+    .card-header { background: #1e293b; padding: 12px 18px; font-size: 13px; font-weight: bold; color: #f59e0b; letter-spacing: 1px; }
+    .card-header.flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+    .form-grid { padding: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .field-full { grid-column: 1 / -1; }
+    label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 5px; font-weight: bold; }
+    .hint-btn { margin-left: 6px; cursor: pointer; font-size: 11px; color: #f59e0b; background: none; border: none; }
+    .hint-box { background: #1e293b; border: 1px solid #334155; border-radius: 6px; padding: 8px 10px; font-size: 12px; color: #94a3b8; margin-bottom: 6px; line-height: 1.6; display: none; }
+    input[type="number"], input[type="date"] { width: 100%; background: #0f172a; border: 1px solid #334155; border-radius: 6px; padding: 9px 12px; color: #e2e8f0; font-size: 14px; outline: none; font-family: Georgia, serif; }
+    input:focus { border-color: #f59e0b; }
+    .save-btn { display: block; width: calc(100% - 36px); margin: 0 18px 18px; background: linear-gradient(90deg, #d97706, #f59e0b); color: #000; border: none; border-radius: 8px; padding: 13px; font-size: 15px; font-weight: bold; cursor: pointer; font-family: Georgia, serif; }
+    .save-btn.success { background: #16a34a; color: #fff; }
+    .save-btn.error { background: #7f1d1d; color: #fff; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+    .stat-card { background: #111827; border-radius: 8px; padding: 14px; text-align: center; border: 1px solid #1e293b; }
+    .stat-value { font-size: 28px; font-weight: bold; }
+    .stat-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+    .dl-btns { display: flex; gap: 8px; }
+    .dl-btn { border: none; border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer; font-weight: bold; font-family: Georgia, serif; }
+    .dl-csv { background: #16a34a; color: #fff; }
+    .dl-json { background: #1d4ed8; color: #fff; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    thead tr { background: #0f172a; }
+    th { padding: 10px 12px; text-align: left; color: #64748b; font-size: 11px; text-transform: uppercase; border-bottom: 1px solid #1e293b; }
+    tbody tr { border-bottom: 1px solid #1e293b; }
+    tbody tr:nth-child(even) { background: #0f172a; }
+    tbody tr:nth-child(odd) { background: #111827; }
+    td { padding: 10px 12px; }
+    .del-btn { cursor: pointer; background: none; border: none; font-size: 14px; }
+    .empty-state { text-align: center; padding: 40px 20px; background: #111827; border-radius: 12px; border: 1px solid #1e293b; }
+    .empty-icon { font-size: 36px; margin-bottom: 12px; }
+    .empty-text { font-size: 15px; color: #64748b; }
+    .empty-sub { font-size: 12px; color: #334155; margin-top: 8px; }
+    .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #334155; }
+    @media (max-width: 500px) {
+      .metrics, .stats { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .field-full { grid-column: 1; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-inner">
+    <div class="header-label">Daily Price Intelligence</div>
+    <h1>🫙 Rice Bran Oil Tracker</h1>
+    <p>Fill in daily numbers from your broker sheet → get instant market signal</p>
+  </div>
+</div>
+
+<div class="container">
+  <div class="signal-box" id="signalBox">
+    <div class="signal-title" id="signalTitle"></div>
+    <div class="signal-sub" id="signalSub"></div>
+  </div>
+
+  <div class="metrics" id="metricsRow" style="display:none">
+    <div class="metric-card" id="metricCPO" style="border-top:2px solid #3b82f6;display:none">
+      <div class="metric-label">CPO in ₹/kg</div>
+      <div class="metric-value" id="valCPO" style="color:#60a5fa"></div>
+      <div class="metric-sub">Auto-converted from MYR</div>
+    </div>
+    <div class="metric-card" id="metricGap" style="display:none">
+      <div class="metric-label">RBO vs CPO Gap</div>
+      <div class="metric-value" id="valGap"></div>
+      <div class="metric-sub" id="subGap"></div>
+    </div>
+    <div class="metric-card" id="metricMargin" style="display:none">
+      <div class="metric-label">Your Net Margin</div>
+      <div class="metric-value" id="valMargin"></div>
+      <div class="metric-sub">After all costs</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">📋 TODAY'S ENTRY</div>
+    <div class="form-grid">
+      <div class="field-full">
+        <label>📅 Date <button class="hint-btn" onclick="toggleHint('hDate')">❓</button></label>
+        <div class="hint-box" id="hDate">Today's date</div>
+        <input type="date" id="fDate" />
+      </div>
+      <div>
+        <label>🫙 RBO Price (₹/kg) <button class="hint-btn" onclick="toggleHint('hRBO')">❓</button></label>
+        <div class="hint-box" id="hRBO">Rice Bran Crude Oil spot price your broker gives you. E.g. 109.5</div>
+        <input type="number" id="fRBO" placeholder="0.00" oninput="updateCalcs()" />
+      </div>
+      <div>
+        <label>🌴 KLC/CPO Price (MYR/tonne) <button class="hint-btn" onclick="toggleHint('hKLC')">❓</button></label>
+        <div class="hint-box" id="hKLC">Malaysia palm oil futures MAR price from broker sheet. E.g. 4130</div>
+        <input type="number" id="fKLC" placeholder="0.00" oninput="updateCalcs()" />
+      </div>
+      <div>
+        <label>⛽ Crude Oil Change (+/-) <button class="hint-btn" onclick="toggleHint('hCrude')">❓</button></label>
+        <div class="hint-box" id="hCrude">Number in brackets next to Crude Oil in CBOT section. E.g. 4.24 or -1.2</div>
+        <input type="number" id="fCrude" placeholder="0.00" oninput="updateCalcs()" />
+      </div>
+      <div>
+        <label>🌴 CPO/KLC Change (+/-) <button class="hint-btn" onclick="toggleHint('hMustard')">❓</button></label>
+        <div class="hint-box" id="hMustard">Change in bracket next to MAR in KLC section. E.g. -2</div>
+        <input type="number" id="fMustard" placeholder="0.00" oninput="updateCalcs()" />
+      </div>
+      <div>
+        <label>💰 Purchase Price (₹/kg) <button class="hint-btn" onclick="toggleHint('hPurch')">❓</button></label>
+        <div class="hint-box" id="hPurch">Price you actually bought RBO at from supplier today</div>
+        <input type="number" id="fPurch" placeholder="0.00" oninput="updateCalcs()" />
+      </div>
+      <div>
+        <label>💵 Sell Price (₹/kg) <button class="hint-btn" onclick="toggleHint('hSell')">❓</button></label>
+        <div class="hint-box" id="hSell">Price refiner paid you today. Leave blank if no deal.</div>
+        <input type="number" id="fSell" placeholder="0.00" oninput="updateCalcs()" />
+      </div>
+      <div class="field-full">
+        <label>🚛 Freight + CD + Brokerage (₹/kg) <button class="hint-btn" onclick="toggleHint('hFreight')">❓</button></label>
+        <div class="hint-box" id="hFreight">All costs per kg — freight, custom duty, brokerage. E.g. 2.5</div>
+        <input type="number" id="fFreight" placeholder="0.00" oninput="updateCalcs()" />
+      </div>
+    </div>
+    <button class="save-btn" id="saveBtn" onclick="handleSave()">💾 Save Today's Entry</button>
+  </div>
+
+  <div class="stats" id="statsRow" style="display:none">
+    <div class="stat-card">
+      <div class="stat-value" id="statDays" style="color:#f59e0b">0</div>
+      <div class="stat-label">Days Tracked</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statMargin" style="color:#22c55e">—</div>
+      <div class="stat-label">Avg Net Margin</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="statLatest" style="color:#60a5fa">—</div>
+      <div class="stat-label">Latest RBO Price</div>
+    </div>
+  </div>
+
+  <div class="card" id="historyCard" style="display:none">
+    <div class="card-header flex">
+      <span>📊 HISTORY</span>
+      <div class="dl-btns">
+        <button class="dl-btn dl-csv" onclick="downloadCSV()">⬇️ CSV (Excel)</button>
+        <button class="dl-btn dl-json" onclick="downloadJSON()">⬇️ JSON (Backup)</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr><th>Date</th><th>RBO ₹/kg</th><th>CPO ₹/kg</th><th>Gap</th><th>Net Margin</th><th>Signal</th><th></th></tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">📊</div>
+    <div class="empty-text">No entries yet — fill in today's numbers above and press Save</div>
+    <div class="empty-sub">Your data is stored locally on this device only — never sent anywhere</div>
+  </div>
+
+  <div class="footer">CPO conversion: 1 MYR = ₹19.2 · Data stored locally on your device only 🔒</div>
+</div>
+
+<script>
+  const STORAGE_KEY = "rbo_entries_v1";
+  const MYR_TO_INR = 19.2;
+  let entries = [];
+
+  try { const r = localStorage.getItem(STORAGE_KEY); if (r) entries = JSON.parse(r); } catch(e) {}
+  document.getElementById("fDate").value = new Date().toISOString().split("T")[0];
+
+  function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); return true; } catch(e) { return false; }
+  }
+  function toggleHint(id) {
+    const el = document.getElementById(id);
+    el.style.display = el.style.display === "block" ? "none" : "block";
+  }
+  function calcCPO(myr) {
+    return myr ? ((parseFloat(myr) / 1000) * MYR_TO_INR).toFixed(2) : null;
+  }
+  function getSignal(gap, cc, mc) {
+    if (gap === null) return null;
+    const g = parseFloat(gap), c = parseFloat(cc)||0, m = parseFloat(mc)||0;
+    let s = 0;
+    if (g > 35) s -= 2; else if (g > 28) s -= 1; else s += 1;
+    if (c > 2) s -= 1; if (m < -3) s -= 1; if (c < 0) s += 1; if (m > 0) s += 1;
+    if (s >= 2) return { label: "✅ Good Day to Close Deal", color: "#22c55e", bg: "#052e16" };
+    if (s === 1) return { label: "🟡 Decent — Proceed Carefully", color: "#facc15", bg: "#1c1400" };
+    if (s === 0) return { label: "⚠️ Mixed Signals — Negotiate Hard", color: "#fb923c", bg: "#1c0a00" };
+    return { label: "🔴 Buyers Have Upper Hand Today", color: "#f87171", bg: "#1c0000" };
+  }
+  function updateCalcs() {
+    const rbo = document.getElementById("fRBO").value;
+    const klc = document.getElementById("fKLC").value;
+    const crude = document.getElementById("fCrude").value;
+    const mustard = document.getElementById("fMustard").value;
+    const purch = document.getElementById("fPurch").value;
+    const sell = document.getElementById("fSell").value;
+    const freight = document.getElementById("fFreight").value;
+    const cpoInr = calcCPO(klc);
+    const gap = (rbo && cpoInr) ? (parseFloat(rbo) - parseFloat(cpoInr)).toFixed(2) : null;
+    const netMargin = (sell && purch && freight) ? (parseFloat(sell) - parseFloat(purch) - parseFloat(freight)).toFixed(2) : null;
+    const signal = getSignal(gap, crude, mustard);
+
+    const sigBox = document.getElementById("signalBox");
+    if (signal) {
+      sigBox.style.display = "block";
+      sigBox.style.background = signal.bg;
+      sigBox.style.border = `1px solid ${signal.color}`;
+      document.getElementById("signalTitle").style.color = signal.color;
+      document.getElementById("signalTitle").textContent = signal.label;
+      document.getElementById("signalSub").textContent = gap ? `RBO vs CPO gap: ₹${gap}/kg — ${parseFloat(gap) > 32 ? "Buyers can switch to cheaper CPO. Negotiate carefully." : "Gap is manageable. You have some pricing power."}` : "";
+    } else { sigBox.style.display = "none"; }
+
+    document.getElementById("metricsRow").style.display = (cpoInr || gap || netMargin) ? "grid" : "none";
+    const mCPO = document.getElementById("metricCPO");
+    mCPO.style.display = cpoInr ? "block" : "none";
+    if (cpoInr) document.getElementById("valCPO").textContent = "₹" + cpoInr;
+    const mGap = document.getElementById("metricGap");
+    mGap.style.display = gap ? "block" : "none";
+    if (gap) {
+      const wide = parseFloat(gap) > 32;
+      mGap.style.borderTop = `2px solid ${wide ? "#f87171" : "#34d399"}`;
+      document.getElementById("valGap").style.color = wide ? "#f87171" : "#34d399";
+      document.getElementById("valGap").textContent = "₹" + gap + "/kg";
+      document.getElementById("subGap").textContent = wide ? "Wide — buyers have leverage" : "Normal range";
+    }
+    const mMar = document.getElementById("metricMargin");
+    mMar.style.display = netMargin ? "block" : "none";
+    if (netMargin) {
+      const pos = parseFloat(netMargin) > 0;
+      mMar.style.borderTop = `2px solid ${pos ? "#22c55e" : "#ef4444"}`;
+      document.getElementById("valMargin").style.color = pos ? "#22c55e" : "#ef4444";
+      document.getElementById("valMargin").textContent = "₹" + netMargin + "/kg";
+    }
+  }
+  function handleSave() {
+    const rbo = document.getElementById("fRBO").value;
+    const klc = document.getElementById("fKLC").value;
+    const crude = document.getElementById("fCrude").value;
+    const mustard = document.getElementById("fMustard").value;
+    const purch = document.getElementById("fPurch").value;
+    const sell = document.getElementById("fSell").value;
+    const freight = document.getElementById("fFreight").value;
+    const date = document.getElementById("fDate").value;
+    const cpoInr = calcCPO(klc);
+    const gap = (rbo && cpoInr) ? (parseFloat(rbo) - parseFloat(cpoInr)).toFixed(2) : null;
+    const netMargin = (sell && purch && freight) ? (parseFloat(sell) - parseFloat(purch) - parseFloat(freight)).toFixed(2) : null;
+    const signal = getSignal(gap, crude, mustard);
+    entries = [{ id: Date.now(), date, rbo, klc, crude, mustard, purch, sell, freight, cpoInr, gap, netMargin, signal: signal?.label }, ...entries].slice(0, 90);
+    const btn = document.getElementById("saveBtn");
+    if (persist()) {
+      btn.textContent = "✅ Saved!"; btn.className = "save-btn success";
+      setTimeout(() => { btn.textContent = "💾 Save Today's Entry"; btn.className = "save-btn"; }, 2000);
+    } else {
+      btn.textContent = "❌ Save failed — storage full?"; btn.className = "save-btn error";
+      setTimeout(() => { btn.textContent = "💾 Save Today's Entry"; btn.className = "save-btn"; }, 3000);
+    }
+    renderHistory();
+  }
+  function handleDelete(id) {
+    entries = entries.filter(e => e.id !== id); persist(); renderHistory();
+  }
+  function renderHistory() {
+    const has = entries.length > 0;
+    document.getElementById("historyCard").style.display = has ? "block" : "none";
+    document.getElementById("statsRow").style.display = has ? "grid" : "none";
+    document.getElementById("emptyState").style.display = has ? "none" : "block";
+    if (!has) return;
+    document.getElementById("statDays").textContent = entries.length;
+    const deals = entries.filter(e => e.netMargin);
+    document.getElementById("statMargin").textContent = deals.length > 0 ? "₹" + (deals.reduce((s,e) => s + parseFloat(e.netMargin), 0) / deals.length).toFixed(2) : "—";
+    document.getElementById("statLatest").textContent = entries[0]?.rbo ? "₹" + entries[0].rbo : "—";
+    document.getElementById("historyBody").innerHTML = entries.map(e => {
+      const gc = e.gap && parseFloat(e.gap) > 32 ? "#f87171" : "#34d399";
+      const mc = e.netMargin && parseFloat(e.netMargin) > 0 ? "#22c55e" : "#f87171";
+      return `<tr>
+        <td style="color:#94a3b8">${e.date}</td>
+        <td style="color:#fef3c7;font-weight:bold">₹${e.rbo||"—"}</td>
+        <td style="color:#93c5fd">${e.cpoInr?"₹"+e.cpoInr:"—"}</td>
+        <td style="color:${gc};font-weight:bold">${e.gap?"₹"+e.gap:"—"}</td>
+        <td style="color:${mc};font-weight:bold">${e.netMargin?"₹"+e.netMargin:"—"}</td>
+        <td style="color:#94a3b8;font-size:11px">${e.signal||"—"}</td>
+        <td><button class="del-btn" onclick="handleDelete(${e.id})">🗑️</button></td>
+      </tr>`;
+    }).join("");
+  }
+  function downloadCSV() {
+    const h = ["Date","RBO (₹/kg)","CPO (₹/kg)","Gap (₹/kg)","Purchase Price","Sell Price","Freight","Net Margin","Signal"];
+    const rows = entries.map(e => [e.date,e.rbo,e.cpoInr||"",e.gap||"",e.purch||"",e.sell||"",e.freight||"",e.netMargin||"",e.signal||""]);
+    dl(new Blob([[h,...rows].map(r=>r.map(v=>`"${v}"`).join(",")).join("\n")],{type:"text/csv"}), `rbo-${td()}.csv`);
+  }
+  function downloadJSON() {
+    dl(new Blob([JSON.stringify(entries,null,2)],{type:"application/json"}), `rbo-${td()}.json`);
+  }
+  function dl(blob, name) {
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name; a.click(); URL.revokeObjectURL(a.href);
+  }
+  function td() { return new Date().toISOString().split("T")[0]; }
+
+  renderHistory();
+</script>
+</body>
+</html>
